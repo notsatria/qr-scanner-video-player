@@ -1,0 +1,2 @@
+D:/Mobile Programming/QrVideoScanner/qr_video_player/android/app/.cxx/Debug/2f5t1y38/x86/CMakeFiles/edit_cache.dir
+D:/Mobile Programming/QrVideoScanner/qr_video_player/android/app/.cxx/Debug/2f5t1y38/x86/CMakeFiles/rebuild_cache.dir
