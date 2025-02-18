@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_video_player/app/home/home_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

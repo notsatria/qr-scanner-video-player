@@ -1,12 +1,14 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_video_player/app/home/home_page.dart';
+import 'package:qr_video_player/app/model/video_result.dart';
+import 'package:qr_video_player/helper/database_helper.dart';
 import 'package:video_player/video_player.dart';
 
 class ChewieDemo extends StatefulWidget {
-  const ChewieDemo({super.key, this.title = 'Chewie Demo', required this.url});
+  const ChewieDemo({super.key, required this.url});
 
-  final String title;
   final String url;
 
   @override
@@ -19,6 +21,8 @@ class _ChewieDemoState extends State<ChewieDemo> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   int? bufferDelay;
+  final TextEditingController titleController = TextEditingController();
+  final dbHelper = DatabaseHelper.instance;
 
   @override
   void initState() {
@@ -30,6 +34,7 @@ class _ChewieDemoState extends State<ChewieDemo> {
   void dispose() {
     _videoPlayerController.dispose();
     _chewieController?.dispose();
+    titleController.dispose();
     super.dispose();
   }
 
@@ -59,17 +64,6 @@ class _ChewieDemoState extends State<ChewieDemo> {
       placeholder: Container(
         color: Colors.grey,
       ),
-
-      // Try playing around with some of these other options:
-
-      // showControls: false,
-      // materialProgressColors: ChewieProgressColors(
-      //   playedColor: Colors.red,
-      //   handleColor: Colors.blue,
-      //   backgroundColor: Colors.grey,
-      //   bufferedColor: Colors.lightGreen,
-      // ),
-      // autoInitialize: true,
     );
   }
 
@@ -77,7 +71,27 @@ class _ChewieDemoState extends State<ChewieDemo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text('Video player'),
+        actions: [
+          IconButton(
+              onPressed: () {
+                _showSaveVideoConfirmation(context, titleController,
+                    onSaved: () async {
+                  if (titleController.text.isNotEmpty) {
+                    int result = await dbHelper.insertVideoResult(VideoResult(
+                        title: titleController.text, url: widget.url));
+                        
+                    if (result > 0) {
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const HomePage()));
+                    }
+                  }
+                });
+              },
+              icon: const Icon(Icons.save))
+        ],
       ),
       body: Column(
         children: <Widget>[
@@ -102,5 +116,31 @@ class _ChewieDemoState extends State<ChewieDemo> {
         ],
       ),
     );
+  }
+
+  void _showSaveVideoConfirmation(
+      BuildContext context, TextEditingController titleController,
+      {required VoidCallback onSaved}) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text("Simpan hasil scan"),
+              content: TextField(
+                decoration: const InputDecoration(
+                  hintText: 'Masukkan judul video',
+                  label: Text('Judul video'),
+                  border: OutlineInputBorder(),
+                ),
+                controller: titleController,
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Batal")),
+                TextButton(onPressed: onSaved, child: const Text("Simpan"))
+              ],
+            ));
   }
 }
