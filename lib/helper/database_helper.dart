@@ -27,6 +27,7 @@ class DatabaseHelper {
         CREATE TABLE video_result(
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         title TEXT NOT NULL, 
+        description TEXT,
         url TEXT NOT NULL
         )
       ''');
@@ -52,5 +53,13 @@ class DatabaseHelper {
   Future<int> delete(int id) async {
     final db = await instance.database;
     return await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<VideoResult>> searchVideos(String query) async {
+    final db = await instance.database;
+    final result = await db.rawQuery(
+        'SELECT * FROM $tableName WHERE title LIKE ? OR description LIKE ?',
+        ['%$query%', '%$query%']);
+    return result.map((map) => VideoResult.fromMap(map)).toList();
   }
 }

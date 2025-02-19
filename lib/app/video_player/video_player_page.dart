@@ -22,6 +22,7 @@ class _ChewieDemoState extends State<ChewieDemo> {
   ChewieController? _chewieController;
   int? bufferDelay;
   final TextEditingController titleController = TextEditingController();
+  final TextEditingController descController = TextEditingController();
   final dbHelper = DatabaseHelper.instance;
 
   @override
@@ -35,6 +36,7 @@ class _ChewieDemoState extends State<ChewieDemo> {
     _videoPlayerController.dispose();
     _chewieController?.dispose();
     titleController.dispose();
+    descController.dispose();
     super.dispose();
   }
 
@@ -69,19 +71,29 @@ class _ChewieDemoState extends State<ChewieDemo> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Video player'),
+        title: Text(
+          'Video player',
+          style: TextStyle(color: theme.colorScheme.onPrimary),
+        ),
+        backgroundColor: theme.primaryColor,
         actions: [
           IconButton(
               onPressed: () {
-                _showSaveVideoConfirmation(context, titleController,
-                    onSaved: () async {
+                _showSaveVideoConfirmation(context, onSaved: () async {
                   if (titleController.text.isNotEmpty) {
                     int result = await dbHelper.insertVideoResult(VideoResult(
-                        title: titleController.text, url: widget.url));
-                        
+                        title: titleController.text,
+                        description: (descController.text.isEmpty)
+                            ? null
+                            : descController.text,
+                        url: widget.url));
+
                     if (result > 0) {
+                      descController.clear();
+                      titleController.clear();
                       Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -90,7 +102,10 @@ class _ChewieDemoState extends State<ChewieDemo> {
                   }
                 });
               },
-              icon: const Icon(Icons.save))
+              icon: Icon(
+                Icons.save,
+                color: theme.indicatorColor,
+              ))
         ],
       ),
       body: Column(
@@ -118,24 +133,39 @@ class _ChewieDemoState extends State<ChewieDemo> {
     );
   }
 
-  void _showSaveVideoConfirmation(
-      BuildContext context, TextEditingController titleController,
+  void _showSaveVideoConfirmation(BuildContext context,
       {required VoidCallback onSaved}) {
     showDialog(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => AlertDialog.adaptive(
               title: const Text("Simpan hasil scan"),
-              content: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Masukkan judul video',
-                  label: Text('Judul video'),
-                  border: OutlineInputBorder(),
-                ),
-                controller: titleController,
+              content: Column(
+                spacing: 16,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Masukkan judul video',
+                      label: Text('Judul video'),
+                      border: OutlineInputBorder(),
+                    ),
+                    controller: titleController,
+                  ),
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Masukkan deskripsi video',
+                      label: Text('Deskripsi (opsional)'),
+                      border: OutlineInputBorder(),
+                    ),
+                    controller: descController,
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
                     onPressed: () {
+                      descController.clear();
+                      titleController.clear();
                       Navigator.pop(context);
                     },
                     child: const Text("Batal")),
