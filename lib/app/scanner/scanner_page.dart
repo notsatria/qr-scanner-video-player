@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:qr_video_player/app/video_player/video_player_page.dart';
+import 'package:qr_video_player/utils/app_settings_helper.dart';
 
 class ScannerPage extends StatefulWidget {
   const ScannerPage({Key? key}) : super(key: key);
@@ -28,7 +29,21 @@ class _ScannerPageState extends State<ScannerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: theme.primaryColor,
+        title: Text('Scan QR',
+            style: TextStyle(color: theme.colorScheme.onPrimary)),
+        actions: [
+          IconButton(
+              onPressed: () async {
+                await controller?.flipCamera();
+                setState(() {});
+              },
+              icon: const Icon(Icons.flip_camera_android))
+        ],
+      ),
       body: Column(
         children: <Widget>[
           Expanded(flex: 4, child: buildQrView(context)),
@@ -84,9 +99,35 @@ class _ScannerPageState extends State<ScannerPage> {
   void onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
     log('${DateTime.now().toIso8601String()}_onPermissionSet $p');
     if (!p) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('no Permission')),
-      );
+      showNoPermissionDialog();
+    }
+  }
+
+  void showNoPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Peringatan'),
+        content: const Text(
+            'Anda diwajibkan untuk mengaktifkan izin akses kamera untuk menggunakan fitur ini'),
+        actions: [
+          TextButton(
+              onPressed: () {
+                _openSettings();
+              },
+              child: const Text('Buka pengaturan'))
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  void _openSettings() async {
+    bool isSuccess = await AppSettingsHelper.openAppSettings();
+    if (isSuccess) {
+      log("Berhasil membuka pengaturan aplikasi");
+    } else {
+      log("Gagal membuka pengaturan aplikasi");
     }
   }
 }

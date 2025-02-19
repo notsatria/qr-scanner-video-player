@@ -30,6 +30,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descController = TextEditingController();
   final dbHelper = DatabaseHelper.instance;
+  bool isTitleEmpty = false;
 
   @override
   void initState() {
@@ -96,32 +97,43 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
         backgroundColor: theme.primaryColor,
         actions: [
-          IconButton(
-              onPressed: () {
-                _showSaveVideoConfirmation(context, onSaved: () async {
-                  if (titleController.text.isNotEmpty) {
-                    int result = await dbHelper.insertVideoResult(VideoResult(
-                        title: titleController.text,
-                        description: (descController.text.isEmpty)
-                            ? null
-                            : descController.text,
-                        url: widget.url));
+          (widget.isFromHome)
+              ? Container()
+              : IconButton(
+                  onPressed: () {
+                    _showSaveVideoConfirmation(context, onSaved: () async {
+                      if (titleController.text.isNotEmpty) {
+                        int result = await dbHelper.insertVideoResult(
+                            VideoResult(
+                                title: titleController.text,
+                                description: (descController.text.isEmpty)
+                                    ? null
+                                    : descController.text,
+                                url: widget.url));
 
-                    if (result > 0) {
-                      descController.clear();
-                      titleController.clear();
-                      Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const HomePage()));
-                    }
-                  }
-                });
-              },
-              icon: Icon(
-                Icons.save,
-                color: theme.indicatorColor,
-              ))
+                        if (result > 0) {
+                          descController.clear();
+                          titleController.clear();
+                          if (widget.isFromHome) {
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const HomePage()));
+                          } else {
+                            Navigator.pop(context);
+                          }
+                        }
+                      } else {
+                        setState(() {
+                          isTitleEmpty = true;
+                        });
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    Icons.save,
+                    color: theme.indicatorColor,
+                  ))
         ],
       ),
       body: Column(
@@ -160,11 +172,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Masukkan judul video',
-                      label: Text('Judul video'),
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: InputDecoration(
+                        hintText: 'Masukkan judul video',
+                        label: const Text('Judul video'),
+                        border: const OutlineInputBorder(),
+                        errorText:
+                            isTitleEmpty ? "Judul tidak boleh kosong" : null),
                     controller: titleController,
                   ),
                   TextField(

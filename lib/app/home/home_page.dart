@@ -17,6 +17,7 @@ class _HomePageState extends State<HomePage> {
   List<VideoResult> videoResult = [];
   late TextEditingController titleController;
   late TextEditingController descController;
+  bool onSearch = false;
 
   @override
   void initState() {
@@ -73,6 +74,7 @@ class _HomePageState extends State<HomePage> {
                 final result = await dbHelper.searchVideos(query);
                 setState(() {
                   videoResult = result;
+                  onSearch = true;
                 });
               },
             ),
@@ -82,7 +84,10 @@ class _HomePageState extends State<HomePage> {
           ),
           (videoResult.isNotEmpty)
               ? Expanded(
-                  child: ListView.builder(
+                  child: ListView.separated(
+                      separatorBuilder: (_, index) => const Divider(
+                            color: Colors.black12,
+                          ),
                       shrinkWrap: true,
                       itemCount: videoResult.length,
                       itemBuilder: (context, index) {
@@ -90,7 +95,7 @@ class _HomePageState extends State<HomePage> {
                         return _slidableItem(index, theme, video);
                       }),
                 )
-              : Expanded(child: _emptyStateWidget())
+              : Expanded(child: _emptyStateWidget(onSearch))
         ],
       ),
     );
@@ -132,6 +137,7 @@ class _HomePageState extends State<HomePage> {
                   builder: (context) => VideoPlayerPage(
                         url: video.url,
                         title: video.title,
+                        isFromHome: true,
                       )));
         },
         leading: Container(
@@ -139,7 +145,7 @@ class _HomePageState extends State<HomePage> {
           width: 35,
           decoration: ShapeDecoration(
             shape: StarBorder(
-              side: BorderSide(color: theme.primaryColor),
+              side: BorderSide(color: theme.primaryColor, width: 1.50),
               points: 10.00,
               rotation: 0.00,
               innerRadiusRatio: 0.60,
@@ -275,7 +281,7 @@ class _HomePageState extends State<HomePage> {
             ));
   }
 
-  Widget _emptyStateWidget() {
+  Widget _emptyStateWidget(bool onSearch) {
     return Container(
       width: 500,
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -287,9 +293,11 @@ class _HomePageState extends State<HomePage> {
             'assets/quran.png',
             height: 220,
           ),
-          const Text(
-            'Anda belum mengaji hari ini. Klik Scan QR untuk memulai.',
-            style: TextStyle(fontSize: 18),
+          Text(
+            onSearch
+                ? 'Hasil tidak ditemukan'
+                : 'Anda belum mengaji hari ini. Klik Scan QR untuk memulai.',
+            style: const TextStyle(fontSize: 18),
             textAlign: TextAlign.center,
           )
         ],
