@@ -6,18 +6,24 @@ import 'package:qr_video_player/app/model/video_result.dart';
 import 'package:qr_video_player/helper/database_helper.dart';
 import 'package:video_player/video_player.dart';
 
-class ChewieDemo extends StatefulWidget {
-  const ChewieDemo({super.key, required this.url});
+class VideoPlayerPage extends StatefulWidget {
+  const VideoPlayerPage(
+      {super.key,
+      required this.url,
+      this.title = 'Video player',
+      this.isFromHome = false});
 
   final String url;
+  final String title;
+  final bool isFromHome;
 
   @override
   State<StatefulWidget> createState() {
-    return _ChewieDemoState();
+    return _VideoPlayerPageState();
   }
 }
 
-class _ChewieDemoState extends State<ChewieDemo> {
+class _VideoPlayerPageState extends State<VideoPlayerPage> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   int? bufferDelay;
@@ -74,8 +80,18 @@ class _ChewieDemoState extends State<ChewieDemo> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+            onPressed: () {
+              if (widget.isFromHome) {
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => const HomePage()));
+              } else {
+                Navigator.pop(context);
+              }
+            },
+            icon: const Icon(Icons.arrow_back)),
         title: Text(
-          'Video player',
+          widget.title,
           style: TextStyle(color: theme.colorScheme.onPrimary),
         ),
         backgroundColor: theme.primaryColor,

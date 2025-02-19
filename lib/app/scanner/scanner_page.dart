@@ -73,7 +73,7 @@ class _ScannerPageState extends State<ScannerPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => ChewieDemo(url: result!.code!)),
+                  builder: (context) => VideoPlayerPage(url: result!.code!)),
             );
           }
         }

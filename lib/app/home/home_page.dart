@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:qr_video_player/app/model/video_result.dart';
 import 'package:qr_video_player/app/scanner/scanner_page.dart';
+import 'package:qr_video_player/app/video_player/video_player_page.dart';
 import 'package:qr_video_player/helper/database_helper.dart';
 
 class HomePage extends StatefulWidget {
@@ -105,22 +106,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: (context) {
               titleController = TextEditingController(text: video.title);
               descController = TextEditingController(text: video.description);
-              _showUpdateVideoConfirmation(context, onSaved: () async {
-                final updatedVideo = VideoResult(
-                    title: titleController.text,
-                    description: descController.text,
-                    url: video.url);
-                final res = await dbHelper.updateVideoResultTitle(updatedVideo);
-
-                if (res > 0) {
-                  descController.clear();
-                  titleController.clear();
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Data berhasil diperbarui')));
-                  _refreshVideoResults();
-                }
-              });
+              _showUpdateVideoConfirmation(context, video);
             },
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: Colors.white,
@@ -139,6 +125,15 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       child: ListTile(
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => VideoPlayerPage(
+                        url: video.url,
+                        title: video.title,
+                      )));
+        },
         leading: Container(
           height: 35,
           width: 35,
@@ -182,8 +177,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showUpdateVideoConfirmation(BuildContext context,
-      {required VoidCallback onSaved}) {
+  void _showUpdateVideoConfirmation(BuildContext context, VideoResult video) {
     showDialog(
         context: context,
         builder: (context) => AlertDialog.adaptive(
@@ -218,7 +212,27 @@ class _HomePageState extends State<HomePage> {
                       Navigator.pop(context);
                     },
                     child: const Text("Batal")),
-                TextButton(onPressed: onSaved, child: const Text("Simpan"))
+                TextButton(
+                    onPressed: () async {
+                      final updatedVideo = VideoResult(
+                          id: video.id,
+                          title: titleController.text,
+                          description: descController.text,
+                          url: video.url);
+                      final res =
+                          await dbHelper.updateVideoResultTitle(updatedVideo);
+
+                      if (res > 0) {
+                        descController.clear();
+                        titleController.clear();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Data berhasil diperbarui')));
+                        _refreshVideoResults();
+                      }
+                    },
+                    child: const Text("Simpan"))
               ],
             ));
   }

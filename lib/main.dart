@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_video_player/app/home/home_page.dart';
-import 'package:qr_video_player/utils/util.dart';
 import 'package:qr_video_player/utils/theme.dart';
+import 'package:qr_video_player/utils/util.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,11 +15,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = View.of(context).platformDispatcher.platformBrightness;
-    TextTheme textTheme = createTextTheme(context, "Source Sans 3", "Source Sans 3");
+    TextTheme textTheme =
+        createTextTheme(context, "Source Sans 3", "Source Sans 3");
     MaterialTheme theme = MaterialTheme(textTheme);
     return MaterialApp(
       title: 'Ruang Ngaji Kita',
-      theme: brightness == Brightness.light ? theme.light() : theme.dark(),
+      theme: brightness == Brightness.light
+          ? theme.light().copyWith(
+              appBarTheme: const AppBarTheme(
+                  iconTheme: IconThemeData(color: Colors.white)))
+          : theme.dark(),
       home: const HomePage(),
     );
   }
