@@ -14,11 +14,20 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final dbHelper = DatabaseHelper.instance;
   List<VideoResult> videoResult = [];
+  late TextEditingController titleController;
+  late TextEditingController descController;
 
   @override
   void initState() {
     super.initState();
     _refreshVideoResults();
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descController.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,26 +82,46 @@ class _HomePageState extends State<HomePage> {
           (videoResult.isNotEmpty)
               ? Expanded(
                   child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: videoResult.length,
-                    itemBuilder: (context, index) =>
-                        _slidableItem(index, theme),
-                  ),
+                      shrinkWrap: true,
+                      itemCount: videoResult.length,
+                      itemBuilder: (context, index) {
+                        final video = videoResult[index];
+                        return _slidableItem(index, theme, video);
+                      }),
                 )
-              : _emptyStateWidget()
+              : Expanded(child: _emptyStateWidget())
         ],
       ),
     );
   }
 
-  Slidable _slidableItem(int index, ThemeData theme) {
+  Slidable _slidableItem(int index, ThemeData theme, VideoResult video) {
     return Slidable(
       key: ValueKey(index),
       endActionPane: ActionPane(
-        motion: const ScrollMotion(),
+        motion: const BehindMotion(),
         children: [
           SlidableAction(
-            onPressed: (context) {},
+            onPressed: (context) {
+              titleController = TextEditingController(text: video.title);
+              descController = TextEditingController(text: video.description);
+              _showUpdateVideoConfirmation(context, onSaved: () async {
+                final updatedVideo = VideoResult(
+                    title: titleController.text,
+                    description: descController.text,
+                    url: video.url);
+                final res = await dbHelper.updateVideoResultTitle(updatedVideo);
+
+                if (res > 0) {
+                  descController.clear();
+                  titleController.clear();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Data berhasil diperbarui')));
+                  _refreshVideoResults();
+                }
+              });
+            },
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: Colors.white,
             icon: Icons.edit,
@@ -100,8 +129,7 @@ class _HomePageState extends State<HomePage> {
           ),
           SlidableAction(
             onPressed: (context) {
-              showDeleteConfirmDialog(
-                  videoResult[index].id!, videoResult[index].title);
+              showDeleteConfirmDialog(video);
             },
             backgroundColor: theme.colorScheme.error,
             foregroundColor: Colors.white,
@@ -135,16 +163,16 @@ class _HomePageState extends State<HomePage> {
           )),
         ),
         title: Text(
-          videoResult[index].title,
+          video.title,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 18,
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        subtitle: (videoResult[index].description != null)
+        subtitle: (video.description != null)
             ? Text(
-                videoResult[index].description!,
+                video.description!,
                 style: theme.textTheme.labelLarge
                     ?.copyWith(color: theme.colorScheme.outline),
               )
@@ -154,12 +182,54 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void showDeleteConfirmDialog(int id, String title) {
+  void _showUpdateVideoConfirmation(BuildContext context,
+      {required VoidCallback onSaved}) {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog.adaptive(
+              title: const Text("Edit Item"),
+              content: Column(
+                spacing: 16,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Edit judul video',
+                      label: Text('Judul video'),
+                      border: OutlineInputBorder(),
+                    ),
+                    controller: titleController,
+                  ),
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Edit deskripsi video',
+                      label: Text('Deskripsi (opsional)'),
+                      border: OutlineInputBorder(),
+                    ),
+                    controller: descController,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      descController.clear();
+                      titleController.clear();
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Batal")),
+                TextButton(onPressed: onSaved, child: const Text("Simpan"))
+              ],
+            ));
+  }
+
+  void showDeleteConfirmDialog(VideoResult video) {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
               title: const Text('Konfirmasi'),
-              content: Text('Apakah Anda yakin ingin menghapus item $title?'),
+              content: Text(
+                  'Apakah Anda yakin ingin menghapus item ${video.title}?'),
               actions: [
                 TextButton(
                     onPressed: () {
@@ -167,9 +237,24 @@ class _HomePageState extends State<HomePage> {
                     },
                     child: const Text('Batal')),
                 TextButton(
-                    onPressed: () {
-                      dbHelper.delete(id);
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      final resDelete = await dbHelper.delete(video.id!);
+                      if (resDelete > 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: const Text('Item berhasill dihapus'),
+                          action: SnackBarAction(
+                              label: 'Batalkan',
+                              onPressed: () async {
+                                final res =
+                                    await dbHelper.insertVideoResult(video);
+                                if (res > 0) {
+                                  _refreshVideoResults();
+                                }
+                              }),
+                        ));
+                        Navigator.pop(context);
+                        _refreshVideoResults();
+                      }
                     },
                     child: const Text('Hapus'))
               ],
@@ -182,6 +267,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Image.asset(
             'assets/quran.png',
