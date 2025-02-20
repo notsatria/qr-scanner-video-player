@@ -8,6 +8,7 @@ import 'package:ruang_ngaji_kita/app/home/home_page.dart';
 import 'package:ruang_ngaji_kita/app/model/video_result.dart';
 import 'package:ruang_ngaji_kita/helper/database_helper.dart';
 import 'package:video_player/video_player.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   const VideoPlayerPage(
@@ -34,19 +35,32 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   final TextEditingController descController = TextEditingController();
   final dbHelper = DatabaseHelper.instance;
   bool isTitleEmpty = false;
+  bool isFormatFileError = false;
+  PlayerType playerType = PlayerType.audio;
+  final webController = WebViewController()
+    ..setJavaScriptMode(JavaScriptMode.unrestricted);
 
   @override
   void initState() {
     super.initState();
-    initializePlayer();
     getMimeType(widget.url).then((mimeType) {
       if (mimeType?.contains("video") == true) {
         log("Ini adalah file video");
-      } else if (mimeType?.contains("audio") == true) {
-        log("Ini adalah file audio");
-        // Tambahkan pemutar audio
+        initializePlayer();
+        setState(() {
+          playerType = PlayerType.video;
+        });
+      } else if (mimeType?.contains("html") == true) {
+        log("Ini adalah file html");
+        setState(() {
+          playerType = PlayerType.audio;
+          webController.loadRequest(Uri.parse(widget.url));
+        });
       } else {
         log("Format tidak dikenali");
+        setState(() {
+          isFormatFileError = true;
+        });
       }
     });
   }
@@ -70,6 +84,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ]);
     } on PlatformException catch (e) {
       log('Error on initializePlayer: $e');
+      setState(() {
+        isFormatFileError = true;
+      });
     }
     _createChewieController();
     setState(() {});
@@ -127,7 +144,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
         backgroundColor: theme.primaryColor,
         actions: [
-          (widget.isFromHome)
+          (widget.isFromHome || isFormatFileError)
               ? Container()
               : IconButton(
                   onPressed: () {
@@ -150,7 +167,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                                 MaterialPageRoute(
                                     builder: (context) => const HomePage()));
                           } else {
-                            Navigator.pop(context);
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const HomePage()));
                           }
                         }
                       } else {
@@ -169,23 +189,51 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       body: Column(
         children: <Widget>[
           Expanded(
-            child: Center(
-              child: _chewieController != null &&
-                      _chewieController!
-                          .videoPlayerController.value.isInitialized
-                  ? Chewie(
-                      controller: _chewieController!,
-                    )
-                  : const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 20),
-                        Text('Loading'),
-                      ],
-                    ),
-            ),
+            child: isFormatFileError
+                ? Center(
+                    child: _emptyStateWidget(),
+                  )
+                : (playerType == PlayerType.video)
+                    ? Center(
+                        child: _chewieController != null &&
+                                _chewieController!
+                                    .videoPlayerController.value.isInitialized
+                            ? Chewie(
+                                controller: _chewieController!,
+                              )
+                            : const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 20),
+                                  Text('Loading'),
+                                ],
+                              ),
+                      )
+                    : WebViewWidget(controller: webController),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyStateWidget() {
+    return Container(
+      width: 500,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/quran.png',
+            height: 220,
+          ),
+          const Text(
+            'Terjadi kesalahan. Format file tidak didukung',
+            style: TextStyle(fontSize: 18),
+            textAlign: TextAlign.center,
+          )
         ],
       ),
     );
@@ -233,3 +281,5 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             ));
   }
 }
+
+enum PlayerType { video, audio }

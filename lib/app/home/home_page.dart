@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:provider/provider.dart';
 import 'package:ruang_ngaji_kita/app/model/video_result.dart';
+import 'package:ruang_ngaji_kita/app/provider/video_provider.dart';
 import 'package:ruang_ngaji_kita/app/scanner/scanner_page.dart';
 import 'package:ruang_ngaji_kita/app/video_player/video_player_page.dart';
 import 'package:ruang_ngaji_kita/helper/database_helper.dart';
@@ -14,10 +16,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final dbHelper = DatabaseHelper.instance;
-  List<VideoResult> videoResult = [];
   late TextEditingController titleController;
   late TextEditingController descController;
-  bool onSearch = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(
           'Ruang Ngaji Kita',
@@ -70,32 +72,38 @@ class _HomePageState extends State<HomePage> {
                 hintText: 'Cari Video',
                 suffixIcon: const Icon(Icons.search),
               ),
-              onChanged: (query) async {
-                final result = await dbHelper.searchVideos(query);
-                setState(() {
-                  videoResult = result;
-                  onSearch = query.isNotEmpty;
-                });
+              onChanged: (query) {
+                Provider.of<VideoProvider>(context, listen: false)
+                    .searchVideos(query);
+                Provider.of<VideoProvider>(context, listen: false)
+                    .setIsOnSearch(query.isNotEmpty);
               },
             ),
           ),
           const SizedBox(
             height: 8,
           ),
-          (videoResult.isNotEmpty)
-              ? Expanded(
-                  child: ListView.separated(
-                      separatorBuilder: (_, index) => const Divider(
-                            color: Colors.black12,
-                          ),
-                      shrinkWrap: true,
-                      itemCount: videoResult.length,
-                      itemBuilder: (context, index) {
-                        final video = videoResult[index];
-                        return _slidableItem(index, theme, video);
-                      }),
-                )
-              : Expanded(child: _emptyStateWidget(onSearch))
+          Consumer<VideoProvider>(builder: (context, provider, child) {
+            if (provider.videos.isNotEmpty) {
+              return Expanded(
+                child: ListView.separated(
+                    separatorBuilder: (_, index) => const Divider(
+                          color: Colors.black12,
+                        ),
+                    shrinkWrap: true,
+                    itemCount: provider.videos.length,
+                    itemBuilder: (context, index) {
+                      final video = provider.videos[index];
+                      return _slidableItem(index, theme, video);
+                    }),
+              );
+            } else {
+              return Consumer<VideoProvider>(
+                  builder: (context, provider, child) {
+                return Expanded(child: _emptyStateWidget(provider.isOnSearch));
+              });
+            }
+          })
         ],
       ),
     );
@@ -111,7 +119,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: (context) {
               titleController = TextEditingController(text: video.title);
               descController = TextEditingController(text: video.description);
-              _showUpdateVideoConfirmation(context, video);
+              _showUpdateVideoConfirmation(video);
             },
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: Colors.white,
@@ -120,7 +128,7 @@ class _HomePageState extends State<HomePage> {
           ),
           SlidableAction(
             onPressed: (context) {
-              showDeleteConfirmDialog(video);
+              showDeleteConfirmDialog(context, video);
             },
             backgroundColor: theme.colorScheme.error,
             foregroundColor: Colors.white,
@@ -183,9 +191,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showUpdateVideoConfirmation(BuildContext context, VideoResult video) {
+  void _showUpdateVideoConfirmation(VideoResult video) {
     showDialog(
-        context: context,
+        context: _scaffoldKey.currentContext!,
         builder: (context) => AlertDialog.adaptive(
               title: const Text("Edit Item"),
               content: Column(
@@ -223,10 +231,13 @@ class _HomePageState extends State<HomePage> {
                       final updatedVideo = VideoResult(
                           id: video.id,
                           title: titleController.text,
-                          description: descController.text,
+                          description: (descController.text.isEmpty)
+                              ? null
+                              : descController.text,
                           url: video.url);
-                      final res =
-                          await dbHelper.updateVideoResultTitle(updatedVideo);
+                      final res = await Provider.of<VideoProvider>(context,
+                              listen: false)
+                          .updateVideo(updatedVideo);
 
                       if (res > 0) {
                         descController.clear();
@@ -243,7 +254,7 @@ class _HomePageState extends State<HomePage> {
             ));
   }
 
-  void showDeleteConfirmDialog(VideoResult video) {
+  void showDeleteConfirmDialog(BuildContext context, VideoResult video) {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -258,15 +269,20 @@ class _HomePageState extends State<HomePage> {
                     child: const Text('Batal')),
                 TextButton(
                     onPressed: () async {
-                      final resDelete = await dbHelper.delete(video.id!);
+                      final resDelete = await Provider.of<VideoProvider>(
+                              context,
+                              listen: false)
+                          .deleteVideo(video.id!);
                       if (resDelete > 0) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: const Text('Item berhasill dihapus'),
                           action: SnackBarAction(
                               label: 'Batalkan',
                               onPressed: () async {
-                                final res =
-                                    await dbHelper.insertVideoResult(video);
+                                final res = await Provider.of<VideoProvider>(
+                                        context,
+                                        listen: false)
+                                    .addVideo(video);
                                 if (res > 0) {
                                   _refreshVideoResults();
                                 }
@@ -305,10 +321,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _refreshVideoResults() async {
-    final data = await dbHelper.getAllVideoResults();
-    setState(() {
-      videoResult = data;
-    });
+  void _refreshVideoResults() {
+    Provider.of<VideoProvider>(context, listen: false).loadVideos();
   }
 }
