@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
-import 'package:qr_video_player/app/video_player/video_player_page.dart';
-import 'package:qr_video_player/utils/app_settings_helper.dart';
+import 'package:ruang_ngaji_kita/app/video_player/video_player_page.dart';
+import 'package:ruang_ngaji_kita/utils/app_settings_helper.dart';
 
 class ScannerPage extends StatefulWidget {
   const ScannerPage({Key? key}) : super(key: key);

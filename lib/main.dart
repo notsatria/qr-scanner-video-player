@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:qr_video_player/app/home/home_page.dart';
-import 'package:qr_video_player/utils/theme.dart';
-import 'package:qr_video_player/utils/util.dart';
+import 'package:ruang_ngaji_kita/app/home/home_page.dart';
+import 'package:ruang_ngaji_kita/utils/theme.dart';
+import 'package:ruang_ngaji_kita/utils/util.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

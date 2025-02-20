@@ -1,9 +1,9 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:qr_video_player/app/home/home_page.dart';
-import 'package:qr_video_player/app/model/video_result.dart';
-import 'package:qr_video_player/helper/database_helper.dart';
+import 'package:ruang_ngaji_kita/app/home/home_page.dart';
+import 'package:ruang_ngaji_kita/app/model/video_result.dart';
+import 'package:ruang_ngaji_kita/helper/database_helper.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerPage extends StatefulWidget {

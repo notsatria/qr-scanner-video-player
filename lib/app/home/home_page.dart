@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:qr_video_player/app/model/video_result.dart';
-import 'package:qr_video_player/app/scanner/scanner_page.dart';
-import 'package:qr_video_player/app/video_player/video_player_page.dart';
-import 'package:qr_video_player/helper/database_helper.dart';
+import 'package:ruang_ngaji_kita/app/model/video_result.dart';
+import 'package:ruang_ngaji_kita/app/scanner/scanner_page.dart';
+import 'package:ruang_ngaji_kita/app/video_player/video_player_page.dart';
+import 'package:ruang_ngaji_kita/helper/database_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> {
                 final result = await dbHelper.searchVideos(query);
                 setState(() {
                   videoResult = result;
-                  onSearch = true;
+                  onSearch = query.isNotEmpty;
                 });
               },
             ),

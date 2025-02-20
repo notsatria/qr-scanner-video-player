@@ -1,5 +1,5 @@
 import 'package:path/path.dart';
-import 'package:qr_video_player/app/model/video_result.dart';
+import 'package:ruang_ngaji_kita/app/model/video_result.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
