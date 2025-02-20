@@ -274,19 +274,9 @@ class _HomePageState extends State<HomePage> {
                               listen: false)
                           .deleteVideo(video.id!);
                       if (resDelete > 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text('Item berhasill dihapus'),
-                          action: SnackBarAction(
-                              label: 'Batalkan',
-                              onPressed: () async {
-                                final res = await Provider.of<VideoProvider>(
-                                        context,
-                                        listen: false)
-                                    .addVideo(video);
-                                if (res > 0) {
-                                  _refreshVideoResults();
-                                }
-                              }),
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text('Item berhasill dihapus'),
                         ));
                         Navigator.pop(context);
                         _refreshVideoResults();
