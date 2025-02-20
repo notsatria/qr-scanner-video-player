@@ -1,4 +1,4 @@
-package com.example.qr_video_player
+package com.ruang_ngaji_kita
 
 import android.content.Context
 import android.content.Intent
