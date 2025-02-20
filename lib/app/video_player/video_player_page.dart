@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:ruang_ngaji_kita/app/home/home_page.dart';
 import 'package:ruang_ngaji_kita/app/model/video_result.dart';
 import 'package:ruang_ngaji_kita/helper/database_helper.dart';
@@ -36,6 +39,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
     initializePlayer();
+    getMimeType(widget.url).then((mimeType) {
+      if (mimeType?.contains("video") == true) {
+        log("Ini adalah file video");
+      } else if (mimeType?.contains("audio") == true) {
+        log("Ini adalah file audio");
+        // Tambahkan pemutar audio
+      } else {
+        log("Format tidak dikenali");
+      }
+    });
   }
 
   @override
@@ -50,9 +63,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   Future<void> initializePlayer() async {
     _videoPlayerController =
         VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    await Future.wait([
-      _videoPlayerController.initialize(),
-    ]);
+
+    try {
+      await Future.wait([
+        _videoPlayerController.initialize(),
+      ]);
+    } on PlatformException catch (e) {
+      log('Error on initializePlayer: $e');
+    }
     _createChewieController();
     setState(() {});
   }
@@ -74,6 +92,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         color: Colors.grey,
       ),
     );
+  }
+
+  Future<String?> getMimeType(String url) async {
+    try {
+      final response = await http.head(Uri.parse(url));
+      log('Response ${response.headers}');
+      return response
+          .headers['content-type']; // e.g. "video/mp4" atau "audio/mpeg"
+    } catch (e) {
+      log("Error fetching mime type: $e");
+      return null;
+    }
   }
 
   @override

@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:permission_handler_platform_interface/permission_handler_platform_interface.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:ruang_ngaji_kita/app/video_player/video_player_page.dart';
 import 'package:ruang_ngaji_kita/utils/app_settings_helper.dart';
@@ -17,6 +18,9 @@ class _ScannerPageState extends State<ScannerPage> {
   Barcode? result;
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  final PermissionHandlerPlatform _permissionHandler =
+      PermissionHandlerPlatform.instance;
+  PermissionStatus _permissionStatus = PermissionStatus.denied;
 
   @override
   void reassemble() {
@@ -25,6 +29,28 @@ class _ScannerPageState extends State<ScannerPage> {
       controller!.pauseCamera();
     }
     controller!.resumeCamera();
+  }
+
+  @override
+  void initState() {
+    _listenForPermissionStatus();
+    super.initState();
+  }
+
+  void _listenForPermissionStatus() async {
+    final status =
+        await _permissionHandler.checkPermissionStatus(Permission.camera);
+
+    if (mounted) {
+      setState(() => _permissionStatus = status);
+
+      if (status == PermissionStatus.denied ||
+          status == PermissionStatus.permanentlyDenied) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showNoPermissionDialog();
+        });
+      }
+    }
   }
 
   @override
@@ -66,7 +92,6 @@ class _ScannerPageState extends State<ScannerPage> {
           borderLength: 30,
           borderWidth: 10,
           cutOutSize: scanArea),
-      onPermissionSet: (ctrl, p) => onPermissionSet(context, ctrl, p),
     );
   }
 
@@ -114,11 +139,11 @@ class _ScannerPageState extends State<ScannerPage> {
           TextButton(
               onPressed: () {
                 _openSettings();
+                Navigator.pop(context);
               },
               child: const Text('Buka pengaturan'))
         ],
       ),
-      barrierDismissible: false,
     );
   }
 

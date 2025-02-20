@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ruang_ngaji_kita/app/home/home_page.dart';
 import 'package:ruang_ngaji_kita/utils/theme.dart';
 import 'package:ruang_ngaji_kita/utils/util.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MyApp());
 }
 
