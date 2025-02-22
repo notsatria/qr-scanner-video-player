@@ -5,7 +5,6 @@ import 'package:ruang_ngaji_kita/app/model/video_result.dart';
 import 'package:ruang_ngaji_kita/app/provider/video_provider.dart';
 import 'package:ruang_ngaji_kita/app/scanner/scanner_page.dart';
 import 'package:ruang_ngaji_kita/app/video_player/video_player_page.dart';
-import 'package:ruang_ngaji_kita/helper/database_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,7 +14,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final dbHelper = DatabaseHelper.instance;
   late TextEditingController titleController;
   late TextEditingController descController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -235,19 +233,15 @@ class _HomePageState extends State<HomePage> {
                               ? null
                               : descController.text,
                           url: video.url);
-                      final res = await Provider.of<VideoProvider>(context,
-                              listen: false)
+                      await Provider.of<VideoProvider>(context, listen: false)
                           .updateVideo(updatedVideo);
 
-                      if (res > 0) {
-                        descController.clear();
-                        titleController.clear();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Data berhasil diperbarui')));
-                        _refreshVideoResults();
-                      }
+                      descController.clear();
+                      titleController.clear();
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Data berhasil diperbarui')));
+                      _refreshVideoResults();
                     },
                     child: const Text("Simpan"))
               ],
@@ -269,18 +263,13 @@ class _HomePageState extends State<HomePage> {
                     child: const Text('Batal')),
                 TextButton(
                     onPressed: () async {
-                      final resDelete = await Provider.of<VideoProvider>(
-                              context,
-                              listen: false)
+                      await Provider.of<VideoProvider>(context, listen: false)
                           .deleteVideo(video.id!);
-                      if (resDelete > 0) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
-                          content: Text('Item berhasill dihapus'),
-                        ));
-                        Navigator.pop(context);
-                        _refreshVideoResults();
-                      }
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Item berhasill dihapus'),
+                      ));
+                      Navigator.pop(context);
+                      _refreshVideoResults();
                     },
                     child: const Text('Hapus'))
               ],

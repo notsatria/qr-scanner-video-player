@@ -18,12 +18,14 @@ class VideoProvider extends ChangeNotifier {
     return await DatabaseHelper.instance.insertVideoResult(video);
   }
 
-  Future<int> deleteVideo(int id) async {
-    return await DatabaseHelper.instance.delete(id);
+  Future<void> deleteVideo(int id) async {
+    await DatabaseHelper.instance.delete(id);
+    notifyListeners();
   }
 
-  Future<int> updateVideo(VideoResult video) async {
-    return await DatabaseHelper.instance.updateVideoResultTitle(video);
+  Future updateVideo(VideoResult video) async {
+    await DatabaseHelper.instance.updateVideoResultTitle(video);
+    notifyListeners();
   }
 
   Future<void> searchVideos(query) async {

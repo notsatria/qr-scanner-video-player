@@ -4,9 +4,10 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:ruang_ngaji_kita/app/home/home_page.dart';
 import 'package:ruang_ngaji_kita/app/model/video_result.dart';
-import 'package:ruang_ngaji_kita/helper/database_helper.dart';
+import 'package:ruang_ngaji_kita/app/provider/video_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -33,7 +34,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   int? bufferDelay;
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descController = TextEditingController();
-  final dbHelper = DatabaseHelper.instance;
   bool isTitleEmpty = false;
   bool isFormatFileError = false;
   PlayerType playerType = PlayerType.audio;
@@ -130,12 +130,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       appBar: AppBar(
         leading: IconButton(
             onPressed: () {
-              if (widget.isFromHome) {
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) => const HomePage()));
-              } else {
-                Navigator.pop(context);
-              }
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const HomePage(), // Replace with your target screen
+                ),
+                (Route<dynamic> route) =>
+                    false, // This condition removes all previous routes
+              );
             },
             icon: const Icon(Icons.arrow_back)),
         title: Text(
@@ -150,8 +152,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   onPressed: () {
                     _showSaveVideoConfirmation(context, onSaved: () async {
                       if (titleController.text.isNotEmpty) {
-                        int result = await dbHelper.insertVideoResult(
-                            VideoResult(
+                        int result = await Provider.of<VideoProvider>(context,
+                                listen: false)
+                            .addVideo(VideoResult(
                                 title: titleController.text,
                                 description: (descController.text.isEmpty)
                                     ? null
@@ -161,17 +164,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         if (result > 0) {
                           descController.clear();
                           titleController.clear();
-                          if (widget.isFromHome) {
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage()));
-                          } else {
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const HomePage()));
-                          }
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const HomePage(), // Replace with your target screen
+                            ),
+                            (Route<dynamic> route) =>
+                                false, // This condition removes all previous routes
+                          );
                         }
                       } else {
                         setState(() {
